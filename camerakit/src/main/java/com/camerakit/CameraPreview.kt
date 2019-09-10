@@ -5,14 +5,11 @@ import android.os.Build
 import android.util.AttributeSet
 import android.view.WindowManager
 import android.widget.FrameLayout
+import com.camerakit.api.*
 import com.camerakit.preview.CameraSurfaceTexture
 import com.camerakit.preview.CameraSurfaceTextureListener
 import com.camerakit.preview.CameraSurfaceView
 import com.camerakit.util.CameraSizeCalculator
-import com.camerakit.api.CameraApi
-import com.camerakit.api.CameraAttributes
-import com.camerakit.api.CameraEvents
-import com.camerakit.api.ManagedCameraApi
 import com.camerakit.api.camera1.Camera1
 import com.camerakit.api.camera2.Camera2
 import com.camerakit.type.CameraFacing
@@ -142,6 +139,16 @@ class CameraPreview : FrameLayout, CameraEvents {
         lifecycleState = LifecycleState.STOPPED
         closeCamera()
     }
+
+    //+lijiwei.youdao add
+    override fun startCamera2PreView(callBack: FrameCallBack) {
+        cameraApi.startCamera2PreView(callBack)
+    }
+
+    override fun stopCamera2PreView() {
+        cameraApi.stopCamera2PreView()
+    }
+    //-lijiwei.youdao add
 
     fun capturePhoto(callback: PhotoCallback) {
         cameraApi.setFlash(flash)

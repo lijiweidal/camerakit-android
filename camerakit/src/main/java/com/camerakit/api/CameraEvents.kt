@@ -10,4 +10,8 @@ interface CameraEvents {
     fun onPreviewStopped()
     fun onPreviewError()
 
+    //+lijiwei.youdao add
+    fun startCamera2PreView(callBack: FrameCallBack)
+    fun stopCamera2PreView()
+    //-lijiwei.youdao add
 }

@@ -7,17 +7,21 @@ import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
 import android.os.Build;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ViewGroup;
 
+import com.camerakit.api.FrameCallBack;
 import com.camerakit.type.CameraFacing;
 import com.camerakit.type.CameraFlash;
 import com.camerakit.type.CameraSize;
+
 import jpegkit.Jpeg;
 
 import org.jetbrains.annotations.NotNull;
@@ -463,6 +467,16 @@ public class CameraKitView extends GestureLayout {
         mCameraPreview.pause();
     }
 
+    //+lijiwei.youdao add
+    public void startPreView(FrameCallBack callback) {
+        mCameraPreview.startCamera2PreView(callback);
+    }
+
+    public void stopPreView() {
+        mCameraPreview.stopCamera2PreView();
+    }
+    //-lijiwei.youdao add
+
     /**
      * @param callback
      */
@@ -505,13 +519,6 @@ public class CameraKitView extends GestureLayout {
      *
      */
     public void captureFrame(FrameCallback callback) {
-
-    }
-
-    /**
-     *
-     */
-    public void setFrameCallback(FrameCallback callback) {
 
     }
 
@@ -561,6 +568,7 @@ public class CameraKitView extends GestureLayout {
     }
 
     /**
+     *
      */
     public void requestPermissions(Activity activity) {
         if (Build.VERSION.SDK_INT >= 23) {
@@ -713,7 +721,7 @@ public class CameraKitView extends GestureLayout {
                     throw new CameraException("FLASH_TORCH is not supported in this version of CameraKit.");
                 }
             }
-        } catch(CameraException exception) {
+        } catch (CameraException exception) {
             Log.e("CameraException: Flash", exception.getMessage());
             return;
         }
@@ -723,6 +731,7 @@ public class CameraKitView extends GestureLayout {
 
     /**
      * Determine if device is capable of flash
+     *
      * @return boolean if device is capable of flash
      */
     public boolean hasFlash() {
@@ -731,6 +740,7 @@ public class CameraKitView extends GestureLayout {
 
     /**
      * Get supported flash types on device
+     *
      * @return array of supported flash types
      */
     public CameraFlash[] getSupportedFlashTypes() {

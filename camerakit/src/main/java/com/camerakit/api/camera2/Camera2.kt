@@ -5,18 +5,16 @@ import android.content.Context.CAMERA_SERVICE
 import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
+import android.media.Image
 import android.media.ImageReader
 import androidx.annotation.RequiresApi
-import android.util.Log
 import android.view.Surface
-import com.camerakit.api.CameraApi
-import com.camerakit.api.CameraAttributes
-import com.camerakit.api.CameraEvents
-import com.camerakit.api.CameraHandler
+import com.camerakit.api.*
 import com.camerakit.api.camera2.ext.*
 import com.camerakit.type.CameraFacing
 import com.camerakit.type.CameraFlash
 import com.camerakit.type.CameraSize
+import java.nio.ByteBuffer
 
 @RequiresApi(21)
 @SuppressWarnings("MissingPermission")
@@ -100,19 +98,19 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
         if (cameraDevice != null && imageReader != null) {
             val surface = Surface(surfaceTexture)
             cameraDevice.getCaptureSession(surface, imageReader, cameraHandler) { captureSession ->
+                try {
+                    if (captureSession != null) {
+                        this.captureSession = captureSession
+                        val previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+                        previewRequestBuilder.addTarget(surface)
+                        previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                        previewRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
 
-                if(captureSession != null) {
-                    this.captureSession = captureSession
-                }
-                
-                if (captureSession != null) {
-                    val previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                    previewRequestBuilder.addTarget(surface)
-                    previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                    previewRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
-
-                    captureSession.setRepeatingRequest(previewRequestBuilder.build(), captureCallback, cameraHandler)
-                    this.previewRequestBuilder = previewRequestBuilder
+                        captureSession.setRepeatingRequest(previewRequestBuilder.build(), captureCallback, cameraHandler)
+                        this.previewRequestBuilder = previewRequestBuilder
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         }
@@ -128,6 +126,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
                 captureSession.abortCaptures()
                 captureSession.close()
             } catch (e: Exception) {
+                e.printStackTrace()
             } finally {
                 onPreviewStopped()
             }
@@ -156,6 +155,56 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
         }
     }
 
+    //+lijiwei.youdao add
+    override fun startCamera2PreView(callBack: FrameCallBack) {
+        val previewRequestBuilder = previewRequestBuilder
+        val captureSession = captureSession
+        captureSession!!.stopRepeating()
+        if (previewRequestBuilder != null && captureSession != null) {
+            try {
+                previewRequestBuilder?.addTarget(imageReader!!.surface)
+                captureSession.setRepeatingRequest(previewRequestBuilder.build(), null, cameraHandler)
+                this.previewRequestBuilder = previewRequestBuilder
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        imageReader?.setOnImageAvailableListener(object : ImageReader.OnImageAvailableListener {
+            override fun onImageAvailable(reader: ImageReader?) {
+                if (reader != null) {
+                    try {
+                        val image: Image = reader.acquireLatestImage()
+                        val buffer: ByteBuffer = image.planes[0].buffer
+                        val bytes = ByteArray(buffer.remaining())
+                        buffer.get(bytes)
+                        callBack.onFrame(bytes)
+                        image.close()
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
+            }
+        }, null)
+    }
+
+    override fun stopCamera2PreView() {
+        imageReader?.setOnImageAvailableListener(null,null)
+        val previewRequestBuilder = previewRequestBuilder
+        val captureSession = captureSession
+        captureSession!!.stopRepeating()
+        if (previewRequestBuilder != null && captureSession != null) {
+            try {
+                previewRequestBuilder?.removeTarget(imageReader!!.surface)
+                captureSession.setRepeatingRequest(previewRequestBuilder.build(), captureCallback, cameraHandler)
+                this.previewRequestBuilder = previewRequestBuilder
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    //-lijiwei.youdao add
+
     private fun lockFocus() {
         val previewRequestBuilder = previewRequestBuilder
         val captureSession = captureSession
@@ -167,6 +216,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
                 captureSession.capture(previewRequestBuilder.build(), captureCallback, cameraHandler)
                 previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, null)
             } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
