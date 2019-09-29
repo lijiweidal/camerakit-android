@@ -32,6 +32,7 @@ fun CameraManager.whenDeviceAvailable(targetCameraId: String, handler: Handler, 
 
         override fun onCameraUnavailable(cameraId: String) {
             if (cameraId == targetCameraId) {
+                unregisterAvailabilityCallback(this)
             }
         }
     }, handler)

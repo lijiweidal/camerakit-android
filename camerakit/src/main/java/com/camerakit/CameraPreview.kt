@@ -246,7 +246,6 @@ class CameraPreview : FrameLayout, CameraEvents {
         val attributes = attributes
         if (surfaceTexture != null && attributes != null) {
             cameraState = CameraState.PREVIEW_STARTING
-
             previewOrientation = when (cameraFacing) {
                 CameraFacing.BACK -> (attributes.sensorOrientation - displayOrientation + 360) % 360
                 CameraFacing.FRONT -> {

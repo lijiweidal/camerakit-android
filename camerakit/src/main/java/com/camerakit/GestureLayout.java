@@ -1,8 +1,10 @@
 package com.camerakit;
 
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -49,6 +51,12 @@ public abstract class GestureLayout extends FrameLayout {
 
     protected abstract void onPinch(float ds, float dsx, float dsy);
 
+    //+lijiwei add for detect horizontal scroll
+    protected abstract void onLeftScroll();
+
+    protected abstract void onRightScroll();
+    //-lijiwei add for detect horizontal scroll
+
     public void performTap(float x, float y) {
         onTap(x, y);
     }
@@ -67,6 +75,29 @@ public abstract class GestureLayout extends FrameLayout {
     }
 
     private GestureDetector.SimpleOnGestureListener mGestureListener = new GestureDetector.SimpleOnGestureListener() {
+
+        //+lijiwei add for detect horizontal scroll
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            if (distanceX < -20) {
+                onLeftScroll();
+            } else if (distanceX > 20) {
+                onRightScroll();
+            }
+            return true;
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            if (e1.getX() - e2.getX() > 20 && Math.abs(velocityX) > 0) {
+                onRightScroll();
+            } else if (e2.getX() - e1.getX() > 20 && Math.abs(velocityX) > 0) {
+                onLeftScroll();
+            }
+            return true;
+        }
+        //-lijiwei add for detect horizontal scroll
+
         @Override
         public boolean onSingleTapConfirmed(MotionEvent e) {
             performTap(e.getX() / (float) getWidth(), e.getY() / (float) getHeight());

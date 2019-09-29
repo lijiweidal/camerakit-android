@@ -205,6 +205,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
     }
     //-lijiwei.youdao add
 
+    //向CameraCaptureSession发送对焦请求
     private fun lockFocus() {
         val previewRequestBuilder = previewRequestBuilder
         val captureSession = captureSession
@@ -297,8 +298,9 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
                     }
                 }
                 STATE_WAITING_LOCK -> {
-                    val afState = result.get(CaptureResult.CONTROL_AF_STATE)
-                    if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                    //val afState = result.get(CaptureResult.CONTROL_AF_STATE)
+                    captureStillPicture()
+                   /* if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
                         runPreCaptureSequence()
                     } else if (null == afState || CaptureResult.CONTROL_AF_STATE_INACTIVE == afState) {
                         captureStillPicture()
@@ -307,7 +309,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
                         captureStillPicture()
                     } else {
                         waitingFrames++
-                    }
+                    }*/
                 }
                 STATE_WAITING_PRECAPTURE -> {
                     val aeState = result.get(CaptureResult.CONTROL_AE_STATE)
@@ -332,7 +334,6 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
                 onPreviewStarted()
                 previewStarted = true
             }
-
             process(result)
         }
 

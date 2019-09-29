@@ -161,6 +161,10 @@ public class CameraKitView extends GestureLayout {
          */
         void onPinch(CameraKitView view, float ds, float dsx, float dsy);
 
+        void onLeftScroll();
+
+        void onRightScroll();
+
     }
 
     /**
@@ -390,6 +394,16 @@ public class CameraKitView extends GestureLayout {
         }
     }
 
+    @Override
+    protected void onLeftScroll() {
+        mGestureListener.onLeftScroll();
+    }
+
+    @Override
+    protected void onRightScroll() {
+        mGestureListener.onRightScroll();
+    }
+
     public void onStart() {
         if (isInEditMode()) {
             return;
@@ -467,7 +481,7 @@ public class CameraKitView extends GestureLayout {
         mCameraPreview.pause();
     }
 
-    //+lijiwei.youdao add
+    //+lijiwei add for get frame data
     public void startPreView(FrameCallBack callback) {
         mCameraPreview.startCamera2PreView(callback);
     }
@@ -475,7 +489,7 @@ public class CameraKitView extends GestureLayout {
     public void stopPreView() {
         mCameraPreview.stopCamera2PreView();
     }
-    //-lijiwei.youdao add
+    //-lijiwei add for get frame data
 
     /**
      * @param callback
@@ -919,6 +933,16 @@ public class CameraKitView extends GestureLayout {
          */
         @Override
         public void onPinch(CameraKitView view, float ds, float dsx, float dsy) {
+        }
+
+        @Override
+        public void onLeftScroll() {
+
+        }
+
+        @Override
+        public void onRightScroll() {
+
         }
 
     }
