@@ -10,8 +10,13 @@ interface CameraEvents {
     fun onPreviewStopped()
     fun onPreviewError()
 
-    //+lijiwei add for get frame data
+    //+lijiwei add
     fun startCamera2PreView(callBack: FrameCallBack)
+
     fun stopCamera2PreView()
-    //-lijiwei add for get frame data
+
+    fun tapFocus(x: Int, y: Int)
+
+    fun onTapFocusFinish()
+    //-lijiwei add
 }

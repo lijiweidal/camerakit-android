@@ -100,7 +100,8 @@ public abstract class GestureLayout extends FrameLayout {
 
         @Override
         public boolean onSingleTapConfirmed(MotionEvent e) {
-            performTap(e.getX() / (float) getWidth(), e.getY() / (float) getHeight());
+            //performTap(e.getX() / (float) getWidth(), e.getY() / (float) getHeight());
+            performTap(e.getX(), e.getY());
             return super.onSingleTapConfirmed(e);
         }
 

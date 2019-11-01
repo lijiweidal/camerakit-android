@@ -3,10 +3,13 @@ package com.camerakit.api.camera2
 import android.content.Context
 import android.content.Context.CAMERA_SERVICE
 import android.graphics.ImageFormat
+import android.graphics.Rect
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
+import android.hardware.camera2.params.MeteringRectangle
 import android.media.Image
 import android.media.ImageReader
+import android.util.Log
 import androidx.annotation.RequiresApi
 import android.view.Surface
 import com.camerakit.api.*
@@ -15,6 +18,7 @@ import com.camerakit.type.CameraFacing
 import com.camerakit.type.CameraFlash
 import com.camerakit.type.CameraSize
 import java.nio.ByteBuffer
+
 
 @RequiresApi(21)
 @SuppressWarnings("MissingPermission")
@@ -40,11 +44,16 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
     private var cameraFacing: CameraFacing = CameraFacing.BACK
     private var waitingFrames: Int = 0
 
+    private var cameraCharacteristics: CameraCharacteristics? = null
+
+    private var previewSize: CameraSize? = null
+
     @Synchronized
     override fun open(facing: CameraFacing) {
         cameraFacing = facing
         val cameraId = cameraManager.getCameraId(facing) ?: throw RuntimeException()
         val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)
+        this.cameraCharacteristics = cameraCharacteristics
         cameraManager.whenDeviceAvailable(cameraId, cameraHandler) {
             cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
                 override fun onOpened(cameraDevice: CameraDevice) {
@@ -89,6 +98,8 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
 
     @Synchronized
     override fun setPreviewSize(size: CameraSize) {
+        Log.d("Camera2", "cameraSize=" + size.width + "*" + size.height)
+        previewSize = size
     }
 
     @Synchronized
@@ -141,6 +152,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
 
     @Synchronized
     override fun setPhotoSize(size: CameraSize) {
+        Log.d("Camera2", "size=" + size.width + "*" + size.height)
         this.imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.JPEG, 2)
     }
 
@@ -189,7 +201,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
     }
 
     override fun stopCamera2PreView() {
-        imageReader?.setOnImageAvailableListener(null,null)
+        imageReader?.setOnImageAvailableListener(null, null)
         val previewRequestBuilder = previewRequestBuilder
         val captureSession = captureSession
         captureSession!!.stopRepeating()
@@ -201,6 +213,50 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    override fun tapFocus(x: Int, y: Int) {
+
+        val activeRect = cameraCharacteristics?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
+        Log.d("Camera2", "rect=" + activeRect.toString())
+        val right = activeRect!!.right
+        val bottom = activeRect.bottom
+
+        val previewWidth = previewSize!!.width
+        val previewHeight = previewSize!!.height
+
+        val leftPos = (x * right) / previewWidth
+        val topPos = (y * bottom) / previewHeight
+
+        val focusLeft = clamp(leftPos - 50, 0, right)
+        val focusTop = clamp(topPos - 50, 0, activeRect.bottom)
+        val focusRight = clamp(leftPos + 50, leftPos, activeRect.right)
+        val focusBottom = clamp(topPos + 50, topPos, bottom)
+
+        val newActiveRect = Rect(focusLeft, focusTop, focusRight, focusBottom)
+
+        Log.d("Camera2", "newRect=" + newActiveRect.toString())
+
+        previewRequestBuilder?.apply {
+            set(CaptureRequest.CONTROL_AF_REGIONS, arrayOf(MeteringRectangle(newActiveRect, 1000)))
+            set(CaptureRequest.CONTROL_AE_REGIONS, arrayOf(MeteringRectangle(newActiveRect, 1000)))
+            set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
+            set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START)
+            set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CameraMetadata.CONTROL_AE_PRECAPTURE_TRIGGER_START)
+        }
+
+        captureSession?.setRepeatingRequest(previewRequestBuilder!!.build(), tapFocusCallback, cameraHandler)
+
+    }
+
+    private fun clamp(x: Int, min: Int, max: Int): Int {
+        return if (x < min) {
+            min
+        } else if (x > max) {
+            max
+        } else {
+            x
         }
     }
     //-lijiwei.youdao add
@@ -285,6 +341,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
     private val captureCallback = object : CameraCaptureSession.CaptureCallback() {
 
         private fun process(result: CaptureResult) {
+
             when (captureState) {
                 STATE_PREVIEW -> {
                     val image = imageReader?.acquireLatestImage()
@@ -300,16 +357,16 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
                 STATE_WAITING_LOCK -> {
                     //val afState = result.get(CaptureResult.CONTROL_AF_STATE)
                     captureStillPicture()
-                   /* if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
-                        runPreCaptureSequence()
-                    } else if (null == afState || CaptureResult.CONTROL_AF_STATE_INACTIVE == afState) {
-                        captureStillPicture()
-                    } else if (waitingFrames >= 5) {
-                        waitingFrames = 0
-                        captureStillPicture()
-                    } else {
-                        waitingFrames++
-                    }*/
+                    /* if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                         runPreCaptureSequence()
+                     } else if (null == afState || CaptureResult.CONTROL_AF_STATE_INACTIVE == afState) {
+                         captureStillPicture()
+                     } else if (waitingFrames >= 5) {
+                         waitingFrames = 0
+                         captureStillPicture()
+                     } else {
+                         waitingFrames++
+                     }*/
                 }
                 STATE_WAITING_PRECAPTURE -> {
                     val aeState = result.get(CaptureResult.CONTROL_AE_STATE)
@@ -341,6 +398,27 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
             process(partialResult)
         }
 
+    }
+
+    private val tapFocusCallback = object : CameraCaptureSession.CaptureCallback() {
+
+        override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
+            val afState = result.get(CaptureResult.CONTROL_AF_STATE)
+            if (afState == null) {
+                Log.d("Camera2", "tap focus failed")
+            }
+            Log.d("Camera2", "afState = " + afState)
+            if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                previewRequestBuilder?.apply {
+                    set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
+                    set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                    set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                }
+                onTapFocusFinish()
+                Log.d("Camera2", "tap focus finish")
+                captureSession?.setRepeatingRequest(previewRequestBuilder!!.build(), captureCallback, cameraHandler)
+            }
+        }
     }
 
     companion object {

@@ -50,4 +50,8 @@
 
     </declare-styleable>
 
+    <declare-styleable name="CameraFocusView">
+        <attr name="lineWidth" format="dimension" />
+        <attr name="lineColor" format="color|reference" />
+    </declare-styleable>
 </resources>

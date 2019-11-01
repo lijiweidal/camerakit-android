@@ -3,6 +3,7 @@ package com.camerakit
 import android.content.Context
 import android.os.Build
 import android.util.AttributeSet
+import android.util.Log
 import android.view.WindowManager
 import android.widget.FrameLayout
 import com.camerakit.api.*
@@ -207,6 +208,13 @@ class CameraPreview : FrameLayout, CameraEvents {
     override fun onPreviewError() {
     }
 
+    //+lijiwei add
+    override fun onTapFocusFinish() {
+        Log.d("CameraPreview", "CameraPreview tap focus finish")
+        listener?.onTapFocusFinish()
+    }
+    //-lijiwei add
+
     // State enums:
 
     enum class LifecycleState {
@@ -298,6 +306,10 @@ class CameraPreview : FrameLayout, CameraEvents {
         cameraApi.release()
     }
 
+    override fun tapFocus(x: Int, y: Int) {
+        cameraApi.tapFocus(x, y)
+    }
+
     // Listener:
 
     interface Listener {
@@ -305,6 +317,10 @@ class CameraPreview : FrameLayout, CameraEvents {
         fun onCameraClosed()
         fun onPreviewStarted()
         fun onPreviewStopped()
+
+        //+lijiwei add
+        fun onTapFocusFinish()
+        //-lijiwei add
     }
 
 }

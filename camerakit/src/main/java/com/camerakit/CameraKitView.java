@@ -13,6 +13,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 
+import android.os.Handler;
+import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ViewGroup;
@@ -21,6 +23,7 @@ import com.camerakit.api.FrameCallBack;
 import com.camerakit.type.CameraFacing;
 import com.camerakit.type.CameraFlash;
 import com.camerakit.type.CameraSize;
+import com.camerakit.ui.CameraFocusView;
 
 import jpegkit.Jpeg;
 
@@ -235,6 +238,7 @@ public class CameraKitView extends GestureLayout {
     private static CameraFlash cameraFlash;
 
     private CameraPreview mCameraPreview;
+    private CameraFocusView mFocusView;
 
     public CameraKitView(Context context) {
         super(context);
@@ -278,6 +282,18 @@ public class CameraKitView extends GestureLayout {
         addView(mCameraPreview);
 
         mCameraPreview.setListener(new CameraPreview.Listener() {
+
+            @Override
+            public void onTapFocusFinish() {
+                Log.d("CameraKitView", "CameraKitView onTapFocusFinish: ");
+                if (mFocusView != null) {
+                    Log.d("CameraKitView", "removeView: " + ((ViewGroup) getParent()).getChildCount());
+                    Message message = Message.obtain();
+                    message.what = 1;
+                    mHander.sendMessage(message);
+                }
+            }
+
             @Override
             public void onCameraOpened() {
                 if (mCameraListener != null) {
@@ -366,11 +382,32 @@ public class CameraKitView extends GestureLayout {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
+    public void removeFocusView() {
+        if (mFocusView != null) {
+            removeView(mFocusView);
+            mFocusView = null;
+        }
+    }
+
+    private Handler mHander = new Handler() {
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            if (msg.what == 1) {
+                removeFocusView();
+            }
+        }
+    };
+
     @Override
     protected void onTap(float x, float y) {
         if (mGestureListener != null) {
             mGestureListener.onTap(this, x, y);
         }
+        mCameraPreview.tapFocus((int) x, (int) y);
+        Log.d("CameraKitView", "onTap: x=" + x + " y=" + y + " " + ((ViewGroup) getParent()).getChildCount());
+        removeFocusView();
+        mFocusView = new CameraFocusView(getContext(), (int) x - 25, (int) y - 25);
+        addView(mFocusView);
     }
 
     @Override
@@ -396,12 +433,14 @@ public class CameraKitView extends GestureLayout {
 
     @Override
     protected void onLeftScroll() {
-        mGestureListener.onLeftScroll();
+        if (mGestureListener != null)
+            mGestureListener.onLeftScroll();
     }
 
     @Override
     protected void onRightScroll() {
-        mGestureListener.onRightScroll();
+        if (mGestureListener != null)
+            mGestureListener.onRightScroll();
     }
 
     public void onStart() {
