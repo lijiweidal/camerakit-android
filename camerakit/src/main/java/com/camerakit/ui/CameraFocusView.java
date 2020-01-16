@@ -12,18 +12,20 @@ import com.camerakit.R;
 
 public class CameraFocusView extends View {
 
+    private static final int BOX_SIZE = 50;
+
     private float lineWidth;
     private int lineColor;
     private Paint calibrationPaint;
     private Context mContext;
 
-    private int mLeft;
-    private int mTop;
+    private float mLeft;
+    private float mTop;
 
-    public CameraFocusView(Context context, int left, int top) {
+    public CameraFocusView(Context context, float left, float top) {
         this(context, null);
-        mLeft = left;
-        mTop = top;
+        mLeft = left - BOX_SIZE;
+        mTop = top - BOX_SIZE;
     }
 
     public CameraFocusView(Context context, AttributeSet attrs) {
@@ -50,7 +52,7 @@ public class CameraFocusView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        int rectWidth = dip2px(mContext, 50);
+        int rectWidth = dip2px(mContext, BOX_SIZE);
         //float left = (getWidth() - rectWidth) / 2;
         //float top = (getHeight() - rectWidth) / 2;
         float right = mLeft + rectWidth;

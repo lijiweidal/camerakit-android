@@ -93,7 +93,11 @@ class CameraPreview : FrameLayout, CameraEvents {
 
     init {
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        displayOrientation = windowManager.defaultDisplay.rotation * 90
+        displayOrientation = if (windowManager.defaultDisplay.rotation == 0) {
+            windowManager.defaultDisplay.rotation * 90 + 90
+        } else {
+            windowManager.defaultDisplay.rotation * 90
+        }
 
         cameraSurfaceView.cameraSurfaceTextureListener = object : CameraSurfaceTextureListener {
             override fun onSurfaceReady(cameraSurfaceTexture: CameraSurfaceTexture) {
@@ -283,8 +287,10 @@ class CameraPreview : FrameLayout, CameraEvents {
                 else -> CameraSize(previewSize.height, previewSize.width)
             }
 
-            photoSize = CameraSizeCalculator(attributes.photoSizes)
-                    .findClosestSizeMatchingArea((imageMegaPixels * 1000000).toInt())
+            /*photoSize = CameraSizeCalculator(attributes.photoSizes)
+                    .findClosestSizeMatchingArea((imageMegaPixels * 1000000).toInt())*/
+            //拍照的图片大小更改为预览大小，因为电子词典支持的输出尺寸会比预览尺寸大一些，这样会出现拍的图片比预览的范围大
+            photoSize = previewSize
 
             cameraApi.setPreviewOrientation(previewOrientation)
             cameraApi.setPreviewSize(previewSize)

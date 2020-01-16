@@ -404,9 +404,8 @@ public class CameraKitView extends GestureLayout {
             mGestureListener.onTap(this, x, y);
         }
         mCameraPreview.tapFocus((int) x, (int) y);
-        Log.d("CameraKitView", "onTap: x=" + x + " y=" + y + " " + ((ViewGroup) getParent()).getChildCount());
         removeFocusView();
-        mFocusView = new CameraFocusView(getContext(), (int) x - 25, (int) y - 25);
+        mFocusView = new CameraFocusView(getContext(), x, y);
         addView(mFocusView);
     }
 
