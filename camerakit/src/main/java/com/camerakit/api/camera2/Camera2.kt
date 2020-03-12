@@ -161,7 +161,8 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
         this.photoCallback = callback
 
         if (cameraFacing == CameraFacing.BACK) {
-            lockFocus()
+            //lockFocus()
+            captureStillPicture()
         } else {
             captureStillPicture()
         }
@@ -313,12 +314,9 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
                 else -> 0L
             }
 
+            captureState = STATE_PREVIEW
             cameraHandler.postDelayed({
-                captureSession.capture(captureBuilder.build(), object : CameraCaptureSession.CaptureCallback() {
-                    override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
-                        unlockFocus()
-                    }
-                }, cameraHandler)
+                captureSession.capture(captureBuilder.build(), captureCallback, cameraHandler)
             }, delay)
         }
     }

@@ -79,12 +79,7 @@ public abstract class GestureLayout extends FrameLayout {
         //+lijiwei add for detect horizontal scroll
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            if (distanceX < -20) {
-                onLeftScroll();
-            } else if (distanceX > 20) {
-                onRightScroll();
-            }
-            return true;
+            return false;
         }
 
         @Override
