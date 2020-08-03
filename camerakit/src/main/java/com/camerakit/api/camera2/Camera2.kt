@@ -54,29 +54,29 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
         val cameraId = cameraManager.getCameraId(facing) ?: throw RuntimeException()
         val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)
         this.cameraCharacteristics = cameraCharacteristics
-        cameraManager.whenDeviceAvailable(cameraId, cameraHandler) {
-            cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
-                override fun onOpened(cameraDevice: CameraDevice) {
-                    val cameraAttributes = Attributes(cameraCharacteristics, facing)
-                    this@Camera2.cameraDevice = cameraDevice
-                    this@Camera2.cameraAttributes = cameraAttributes
-                    onCameraOpened(cameraAttributes)
-                }
+        //cameraManager.whenDeviceAvailable(cameraId, cameraHandler) {
+        cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
+            override fun onOpened(cameraDevice: CameraDevice) {
+                val cameraAttributes = Attributes(cameraCharacteristics, facing)
+                this@Camera2.cameraDevice = cameraDevice
+                this@Camera2.cameraAttributes = cameraAttributes
+                onCameraOpened(cameraAttributes)
+            }
 
-                override fun onDisconnected(cameraDevice: CameraDevice) {
-                    cameraDevice.close()
-                    this@Camera2.cameraDevice = null
-                    this@Camera2.captureSession = null
-                    onCameraClosed()
-                }
+            override fun onDisconnected(cameraDevice: CameraDevice) {
+                cameraDevice.close()
+                this@Camera2.cameraDevice = null
+                this@Camera2.captureSession = null
+                onCameraClosed()
+            }
 
-                override fun onError(cameraDevice: CameraDevice, error: Int) {
-                    cameraDevice.close()
-                    this@Camera2.cameraDevice = null
-                    this@Camera2.captureSession = null
-                }
-            }, cameraHandler)
-        }
+            override fun onError(cameraDevice: CameraDevice, error: Int) {
+                cameraDevice.close()
+                this@Camera2.cameraDevice = null
+                this@Camera2.captureSession = null
+            }
+        }, cameraHandler)
+        //}
     }
 
     @Synchronized
@@ -220,9 +220,11 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
     override fun tapFocus(x: Int, y: Int) {
 
         val activeRect = cameraCharacteristics?.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
-        Log.d("Camera2", "rect=" + activeRect.toString())
         val right = activeRect!!.right
         val bottom = activeRect.bottom
+        Log.d("Camera2", "rect=$activeRect")
+
+        if (previewSize == null) return
 
         val previewWidth = previewSize!!.width
         val previewHeight = previewSize!!.height
@@ -230,14 +232,16 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
         val leftPos = (x * right) / previewWidth
         val topPos = (y * bottom) / previewHeight
 
-        val focusLeft = clamp(leftPos - 50, 0, right)
-        val focusTop = clamp(topPos - 50, 0, activeRect.bottom)
-        val focusRight = clamp(leftPos + 50, leftPos, activeRect.right)
-        val focusBottom = clamp(topPos + 50, topPos, bottom)
+        val areaSize = (50 * right) / previewWidth
+
+        val focusLeft = clamp(leftPos - areaSize, 0, right)
+        val focusTop = clamp(topPos - areaSize, 0, bottom)
+        val focusRight = clamp(leftPos + areaSize, leftPos, right)
+        val focusBottom = clamp(topPos + areaSize, topPos, bottom)
 
         val newActiveRect = Rect(focusLeft, focusTop, focusRight, focusBottom)
 
-        Log.d("Camera2", "newRect=" + newActiveRect.toString())
+        Log.d("Camera2", "newRect=$newActiveRect")
 
         previewRequestBuilder?.apply {
             set(CaptureRequest.CONTROL_AF_REGIONS, arrayOf(MeteringRectangle(newActiveRect, 1000)))
@@ -247,7 +251,10 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
             set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CameraMetadata.CONTROL_AE_PRECAPTURE_TRIGGER_START)
         }
 
-        captureSession?.setRepeatingRequest(previewRequestBuilder!!.build(), tapFocusCallback, cameraHandler)
+        try {
+            captureSession?.setRepeatingRequest(previewRequestBuilder!!.build(), tapFocusCallback, cameraHandler)
+        } catch (e: Exception) {
+        }
 
     }
 
@@ -402,15 +409,16 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
 
         override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
             val afState = result.get(CaptureResult.CONTROL_AF_STATE)
-            if (afState == null) {
+            if (afState == null || afState == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED) {
                 Log.d("Camera2", "tap focus failed")
             }
-            Log.d("Camera2", "afState = " + afState)
+            //Log.d("Camera2", "afState = $afState")
             if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState || CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
                 previewRequestBuilder?.apply {
-                    set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
+                    set(CaptureRequest.CONTROL_AF_TRIGGER, null)
                     set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                     set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                    set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, null)
                 }
                 onTapFocusFinish()
                 Log.d("Camera2", "tap focus finish")

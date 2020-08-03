@@ -278,6 +278,13 @@ public class CameraKitView extends GestureLayout {
 
         a.recycle();
 
+        initCameraPreview();
+    }
+
+    private void initCameraPreview() {
+        if (mCameraPreview != null) {
+            removeView(mCameraPreview);
+        }
         mCameraPreview = new CameraPreview(getContext());
         addView(mCameraPreview);
 
@@ -321,12 +328,12 @@ public class CameraKitView extends GestureLayout {
             @Override
             public void onPreviewStarted() {
                 if (mPreviewListener != null) {
-                    post(new Runnable() {
+                    postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             mPreviewListener.onStart();
                         }
-                    });
+                    }, 300);
                 }
             }
 
@@ -489,6 +496,7 @@ public class CameraKitView extends GestureLayout {
         setImageMegaPixels(mImageMegaPixels);
 
         cameraFacing = getFacing() == CameraKit.FACING_BACK ? CameraFacing.BACK : CameraFacing.FRONT;
+        initCameraPreview();
         mCameraPreview.start(cameraFacing);
     }
 

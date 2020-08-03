@@ -215,7 +215,9 @@ class CameraPreview : FrameLayout, CameraEvents {
     //+lijiwei add
     override fun onTapFocusFinish() {
         Log.d("CameraPreview", "CameraPreview tap focus finish")
-        listener?.onTapFocusFinish()
+        if(lifecycleState == LifecycleState.RESUMED && cameraState == CameraState.PREVIEW_STARTING) {
+            listener?.onTapFocusFinish()
+        }
     }
     //-lijiwei add
 
@@ -266,6 +268,8 @@ class CameraPreview : FrameLayout, CameraEvents {
                 }
             }
 
+            Log.d("CameraPreview", "previewOri = $previewOrientation , displayOri = $displayOrientation, sensorOri = ${attributes.sensorOrientation}")
+
             captureOrientation = when (cameraFacing) {
                 CameraFacing.BACK -> (attributes.sensorOrientation - displayOrientation + 360) % 360
                 CameraFacing.FRONT -> (attributes.sensorOrientation + displayOrientation + 360) % 360
@@ -289,8 +293,12 @@ class CameraPreview : FrameLayout, CameraEvents {
 
             /*photoSize = CameraSizeCalculator(attributes.photoSizes)
                     .findClosestSizeMatchingArea((imageMegaPixels * 1000000).toInt())*/
-            //拍照的图片大小更改为预览大小，因为电子词典支持的输出尺寸会比预览尺寸大一些，这样会出现拍的图片比预览的范围大
-            photoSize = previewSize
+            //拍照的图片大小更改为6M
+            photoSize = when (previewOrientation % 180 == 0) {
+                true -> CameraSize(3264, 1840)
+                false -> CameraSize(1840, 3264)
+            }
+            Log.d("CameraPreview", "${photoSize.height} , ${photoSize.width}")
 
             cameraApi.setPreviewOrientation(previewOrientation)
             cameraApi.setPreviewSize(previewSize)
@@ -313,7 +321,9 @@ class CameraPreview : FrameLayout, CameraEvents {
     }
 
     override fun tapFocus(x: Int, y: Int) {
-        cameraApi.tapFocus(x, y)
+        if(lifecycleState == LifecycleState.RESUMED && cameraState == CameraState.PREVIEW_STARTING) {
+            cameraApi.tapFocus(x, y)
+        }
     }
 
     // Listener:
