@@ -7,19 +7,17 @@ import android.util.Log
 import android.view.WindowManager
 import android.widget.FrameLayout
 import com.camerakit.api.*
+import com.camerakit.api.camera1.Camera1
+import com.camerakit.api.camera2.Camera2
 import com.camerakit.preview.CameraSurfaceTexture
 import com.camerakit.preview.CameraSurfaceTextureListener
 import com.camerakit.preview.CameraSurfaceView
-import com.camerakit.util.CameraSizeCalculator
-import com.camerakit.api.camera1.Camera1
-import com.camerakit.api.camera2.Camera2
 import com.camerakit.type.CameraFacing
 import com.camerakit.type.CameraFlash
 import com.camerakit.type.CameraSize
+import com.camerakit.util.CameraSizeCalculator
 import jpegkit.Jpeg
 import kotlinx.coroutines.*
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.suspendCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -75,8 +73,8 @@ class CameraPreview : FrameLayout, CameraEvents {
     private val cameraSurfaceView: CameraSurfaceView = CameraSurfaceView(context)
 
     private val cameraDispatcher: CoroutineDispatcher = newSingleThreadContext("CAMERA")
-    private var cameraOpenContinuation: Continuation<Unit>? = null
-    private var previewStartContinuation: Continuation<Unit>? = null
+    private var cameraOpenContinuation: CancellableContinuation<Unit>? = null
+    private var previewStartContinuation: CancellableContinuation<Unit>? = null
 
     @SuppressWarnings("NewApi")
     private val cameraApi: CameraApi = ManagedCameraApi(
@@ -98,12 +96,12 @@ class CameraPreview : FrameLayout, CameraEvents {
         } else {
             windowManager.defaultDisplay.rotation * 90
         }
-
         cameraSurfaceView.cameraSurfaceTextureListener = object : CameraSurfaceTextureListener {
             override fun onSurfaceReady(cameraSurfaceTexture: CameraSurfaceTexture) {
                 surfaceTexture = cameraSurfaceTexture
                 surfaceState = SurfaceState.SURFACE_AVAILABLE
                 if (lifecycleState == LifecycleState.STARTED || lifecycleState == LifecycleState.RESUMED) {
+                    //Log.d("CameraPreview", "onSurfaceReady resume")
                     resume()
                 }
             }
@@ -113,36 +111,54 @@ class CameraPreview : FrameLayout, CameraEvents {
     }
 
     fun start(facing: CameraFacing) {
+        //Log.d("CameraPreview", "start")
         GlobalScope.launch(cameraDispatcher) {
+            //Log.d("CameraPreview", "start launch")
             runBlocking {
+                //Log.d("CameraPreview", "start runBlocking")
                 lifecycleState = LifecycleState.STARTED
                 cameraFacing = facing
                 openCamera()
+                //Log.d("CameraPreview", "start runBlocking end")
             }
         }
     }
 
     fun resume() {
+        //Log.d("CameraPreview", "resume")
         GlobalScope.launch(cameraDispatcher) {
+            //Log.d("CameraPreview", "resume launch")
             runBlocking {
+                //Log.d("CameraPreview", "resume runBlocking")
                 lifecycleState = LifecycleState.RESUMED
                 try {
                     startPreview()
                 } catch (e: Exception) {
-                    // camera or surface not ready, wait.
+                    //Log.d("CameraPreview", e.toString())
                 }
+                //Log.d("CameraPreview", "resume runBlocking end")
             }
         }
     }
 
     fun pause() {
+        //Log.d("CameraPreview", "pause")
         lifecycleState = LifecycleState.PAUSED
         stopPreview()
     }
 
     fun stop() {
+        //Log.d("CameraPreview", "stop")
         lifecycleState = LifecycleState.STOPPED
         closeCamera()
+    }
+
+    fun destroy() {
+        //Log.d("CameraPreview", "destroy")
+        cameraOpenContinuation?.cancel()
+        previewStartContinuation?.cancel()
+        cameraDispatcher.cancelChildren()
+        cameraDispatcher.cancel()
     }
 
     //+lijiwei.youdao add
@@ -188,6 +204,7 @@ class CameraPreview : FrameLayout, CameraEvents {
     override fun onCameraOpened(cameraAttributes: CameraAttributes) {
         cameraState = CameraState.CAMERA_OPENED
         attributes = cameraAttributes
+        //Log.d("CameraPreview", "onCameraOpened cameraOpenContinuation resume and null")
         cameraOpenContinuation?.resume(Unit)
         cameraOpenContinuation = null
     }
@@ -201,6 +218,7 @@ class CameraPreview : FrameLayout, CameraEvents {
 
     override fun onPreviewStarted() {
         cameraState = CameraState.PREVIEW_STARTED
+        //Log.d("CameraPreview", "onPreviewStarted previewStartContinuation resume and null")
         previewStartContinuation?.resume(Unit)
         previewStartContinuation = null
     }
@@ -215,7 +233,7 @@ class CameraPreview : FrameLayout, CameraEvents {
     //+lijiwei add
     override fun onTapFocusFinish() {
         Log.d("CameraPreview", "CameraPreview tap focus finish")
-        if(lifecycleState == LifecycleState.RESUMED && cameraState == CameraState.PREVIEW_STARTING) {
+        if (lifecycleState == LifecycleState.RESUMED && cameraState == CameraState.PREVIEW_STARTING) {
             listener?.onTapFocusFinish()
         }
     }
@@ -248,80 +266,96 @@ class CameraPreview : FrameLayout, CameraEvents {
 
     // Camera control:
 
-    private suspend fun openCamera(): Unit = suspendCoroutine {
+    private suspend fun openCamera(): Unit = suspendCancellableCoroutine {
+        //Log.d("CameraPreview", "openCamera start")
+        //Log.d("CameraPreview", "openCamera cameraOpenContinuation = it")
         cameraOpenContinuation = it
         cameraState = CameraState.CAMERA_OPENING
         cameraApi.open(cameraFacing)
+        //Log.d("CameraPreview", "openCamera end")
     }
 
-    private suspend fun startPreview(): Unit = suspendCoroutine {
-        previewStartContinuation = it
-        val surfaceTexture = surfaceTexture
-        val attributes = attributes
-        if (surfaceTexture != null && attributes != null) {
-            cameraState = CameraState.PREVIEW_STARTING
-            previewOrientation = when (cameraFacing) {
-                CameraFacing.BACK -> (attributes.sensorOrientation - displayOrientation + 360) % 360
-                CameraFacing.FRONT -> {
-                    val result = (attributes.sensorOrientation + displayOrientation) % 360
-                    (360 - result) % 360
-                }
-            }
-
-            Log.d("CameraPreview", "previewOri = $previewOrientation , displayOri = $displayOrientation, sensorOri = ${attributes.sensorOrientation}")
-
-            captureOrientation = when (cameraFacing) {
-                CameraFacing.BACK -> (attributes.sensorOrientation - displayOrientation + 360) % 360
-                CameraFacing.FRONT -> (attributes.sensorOrientation + displayOrientation + 360) % 360
-            }
-
-            if (Build.VERSION.SDK_INT >= 21 && !FORCE_DEPRECATED_API) {
-                surfaceTexture.setRotation(displayOrientation)
-            }
-
-            previewSize = CameraSizeCalculator(attributes.previewSizes)
-                    .findClosestSizeContainingTarget(when (previewOrientation % 180 == 0) {
-                        true -> CameraSize(width, height)
-                        false -> CameraSize(height, width)
-                    })
-
-            surfaceTexture.setDefaultBufferSize(previewSize.width, previewSize.height)
-            surfaceTexture.size = when (previewOrientation % 180) {
-                0 -> previewSize
-                else -> CameraSize(previewSize.height, previewSize.width)
-            }
-
-            /*photoSize = CameraSizeCalculator(attributes.photoSizes)
-                    .findClosestSizeMatchingArea((imageMegaPixels * 1000000).toInt())*/
-            //拍照的图片大小更改为6M
-            photoSize = when (previewOrientation % 180 == 0) {
-                true -> CameraSize(3264, 1840)
-                false -> CameraSize(1840, 3264)
-            }
-            Log.d("CameraPreview", "${photoSize.height} , ${photoSize.width}")
-
-            cameraApi.setPreviewOrientation(previewOrientation)
-            cameraApi.setPreviewSize(previewSize)
-            cameraApi.setPhotoSize(photoSize)
-            cameraApi.startPreview(surfaceTexture)
-        } else {
+    private suspend fun startPreview(): Unit = suspendCancellableCoroutine {
+        //Log.d("CameraPreview", "startPreview start")
+        //Log.d("CameraPreview", "startPreview previewStartContinuation = it")
+        if (cameraState == CameraState.PREVIEW_STARTED) {
+            //已开启
+            //Log.d("CameraPreview", "startPreview previewStartContinuation resumeWithException and null")
             it.resumeWithException(IllegalStateException())
             previewStartContinuation = null
+        } else {
+            previewStartContinuation = it
+            val surfaceTexture = surfaceTexture
+            val attributes = attributes
+            if (surfaceTexture != null && attributes != null) {
+                cameraState = CameraState.PREVIEW_STARTING
+                previewOrientation = when (cameraFacing) {
+                    CameraFacing.BACK -> (attributes.sensorOrientation - displayOrientation + 360) % 360
+                    CameraFacing.FRONT -> {
+                        val result = (attributes.sensorOrientation + displayOrientation) % 360
+                        (360 - result) % 360
+                    }
+                }
+
+                Log.d("CameraPreview", "previewOri = $previewOrientation , displayOri = $displayOrientation, sensorOri = ${attributes.sensorOrientation}")
+
+                captureOrientation = when (cameraFacing) {
+                    CameraFacing.BACK -> (attributes.sensorOrientation - displayOrientation + 360) % 360
+                    CameraFacing.FRONT -> (attributes.sensorOrientation + displayOrientation + 360) % 360
+                }
+
+                if (Build.VERSION.SDK_INT >= 21 && !FORCE_DEPRECATED_API) {
+                    surfaceTexture.setRotation(displayOrientation)
+                }
+
+                previewSize = CameraSizeCalculator(attributes.previewSizes)
+                        .findClosestSizeContainingTarget(when (previewOrientation % 180 == 0) {
+                            true -> CameraSize(width, height)
+                            false -> CameraSize(height, width)
+                        })
+
+                surfaceTexture.setDefaultBufferSize(previewSize.width, previewSize.height)
+                surfaceTexture.size = when (previewOrientation % 180) {
+                    0 -> previewSize
+                    else -> CameraSize(previewSize.height, previewSize.width)
+                }
+
+                /*photoSize = CameraSizeCalculator(attributes.photoSizes)
+                        .findClosestSizeMatchingArea((imageMegaPixels * 1000000).toInt())*/
+                //拍照的图片大小更改为6M
+                photoSize = when (previewOrientation % 180 == 0) {
+                    true -> CameraSize(3264, 1840)
+                    false -> CameraSize(1840, 3264)
+                }
+                Log.d("CameraPreview", "${photoSize.height} , ${photoSize.width}")
+
+                cameraApi.setPreviewOrientation(previewOrientation)
+                cameraApi.setPreviewSize(previewSize)
+                cameraApi.setPhotoSize(photoSize)
+                cameraApi.startPreview(surfaceTexture)
+            } else {
+                //Log.d("CameraPreview", "startPreview previewStartContinuation resumeWithException and null")
+                it.resumeWithException(IllegalStateException())
+                previewStartContinuation = null
+            }
         }
+        //Log.d("CameraPreview", "startPreview end")
     }
 
     private fun stopPreview() {
         cameraState = CameraState.PREVIEW_STOPPING
         cameraApi.stopPreview()
+        //Log.d("CameraPreview", "stopPreview end")
     }
 
     private fun closeCamera() {
         cameraState = CameraState.CAMERA_CLOSING
         cameraApi.release()
+        //Log.d("CameraPreview", "closeCamera end")
     }
 
     override fun tapFocus(x: Int, y: Int) {
-        if(lifecycleState == LifecycleState.RESUMED && cameraState == CameraState.PREVIEW_STARTING) {
+        if (lifecycleState == LifecycleState.RESUMED && cameraState == CameraState.PREVIEW_STARTING) {
             cameraApi.tapFocus(x, y)
         }
     }

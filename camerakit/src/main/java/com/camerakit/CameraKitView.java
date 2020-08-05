@@ -7,17 +7,16 @@ import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
 import android.os.Build;
-
-import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.RestrictTo;
-import androidx.annotation.RestrictTo.Scope;
-
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ViewGroup;
+
+import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.RestrictTo.Scope;
 
 import com.camerakit.api.FrameCallBack;
 import com.camerakit.type.CameraFacing;
@@ -25,14 +24,14 @@ import com.camerakit.type.CameraFlash;
 import com.camerakit.type.CameraSize;
 import com.camerakit.ui.CameraFocusView;
 
-import jpegkit.Jpeg;
-
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
+
+import jpegkit.Jpeg;
 
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
@@ -512,7 +511,7 @@ public class CameraKitView extends GestureLayout {
         if (isInEditMode()) {
             return;
         }
-
+        //Log.d("CameraPreview", "onResume resume");
         mCameraPreview.resume();
     }
 
@@ -525,6 +524,13 @@ public class CameraKitView extends GestureLayout {
         }
 
         mCameraPreview.pause();
+    }
+
+    public void onDestroy() {
+        if (isInEditMode()) {
+            return;
+        }
+        mCameraPreview.destroy();
     }
 
     //+lijiwei add for get frame data
