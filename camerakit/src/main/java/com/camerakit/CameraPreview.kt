@@ -75,6 +75,7 @@ class CameraPreview : FrameLayout, CameraEvents {
     private val cameraDispatcher: CoroutineDispatcher = newSingleThreadContext("CAMERA")
     private var cameraOpenContinuation: CancellableContinuation<Unit>? = null
     private var previewStartContinuation: CancellableContinuation<Unit>? = null
+    private var hasDestroyed = false
 
     @SuppressWarnings("NewApi")
     private val cameraApi: CameraApi = ManagedCameraApi(
@@ -155,6 +156,7 @@ class CameraPreview : FrameLayout, CameraEvents {
 
     fun destroy() {
         //Log.d("CameraPreview", "destroy")
+        hasDestroyed = true
         cameraOpenContinuation?.cancel()
         previewStartContinuation?.cancel()
         cameraDispatcher.cancelChildren()
@@ -278,7 +280,7 @@ class CameraPreview : FrameLayout, CameraEvents {
     private suspend fun startPreview(): Unit = suspendCancellableCoroutine {
         //Log.d("CameraPreview", "startPreview start")
         //Log.d("CameraPreview", "startPreview previewStartContinuation = it")
-        if (cameraState == CameraState.PREVIEW_STARTED) {
+        if (cameraState == CameraState.PREVIEW_STARTED || hasDestroyed) {
             //已开启
             //Log.d("CameraPreview", "startPreview previewStartContinuation resumeWithException and null")
             it.resumeWithException(IllegalStateException())
