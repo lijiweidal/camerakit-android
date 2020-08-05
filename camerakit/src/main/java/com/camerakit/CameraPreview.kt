@@ -76,6 +76,9 @@ class CameraPreview : FrameLayout, CameraEvents {
     private var cameraOpenContinuation: CancellableContinuation<Unit>? = null
     private var previewStartContinuation: CancellableContinuation<Unit>? = null
 
+    //标记Camera是否已准备释放
+    private var done = false
+
     @SuppressWarnings("NewApi")
     private val cameraApi: CameraApi = ManagedCameraApi(
             when (Build.VERSION.SDK_INT < 21 || FORCE_DEPRECATED_API) {
@@ -125,6 +128,7 @@ class CameraPreview : FrameLayout, CameraEvents {
     }
 
     fun resume() {
+        done = false
         //Log.d("CameraPreview", "resume")
         GlobalScope.launch(cameraDispatcher) {
             //Log.d("CameraPreview", "resume launch")
@@ -142,6 +146,7 @@ class CameraPreview : FrameLayout, CameraEvents {
     }
 
     fun pause() {
+        done = true
         //Log.d("CameraPreview", "pause")
         lifecycleState = LifecycleState.PAUSED
         stopPreview()
@@ -278,8 +283,8 @@ class CameraPreview : FrameLayout, CameraEvents {
     private suspend fun startPreview(): Unit = suspendCancellableCoroutine {
         //Log.d("CameraPreview", "startPreview start")
         //Log.d("CameraPreview", "startPreview previewStartContinuation = it")
-        if (cameraState == CameraState.PREVIEW_STARTED) {
-            //已开启
+        if (done || cameraState == CameraState.PREVIEW_STARTED) {
+            //已打算结束预览或已开启预览
             //Log.d("CameraPreview", "startPreview previewStartContinuation resumeWithException and null")
             it.resumeWithException(IllegalStateException())
             previewStartContinuation = null
