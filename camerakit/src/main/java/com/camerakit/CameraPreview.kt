@@ -233,9 +233,7 @@ class CameraPreview : FrameLayout, CameraEvents {
     //+lijiwei add
     override fun onTapFocusFinish() {
         Log.d("CameraPreview", "CameraPreview tap focus finish")
-        if (lifecycleState == LifecycleState.RESUMED && cameraState == CameraState.PREVIEW_STARTING) {
-            listener?.onTapFocusFinish()
-        }
+        listener?.onTapFocusFinish()
     }
     //-lijiwei add
 
@@ -355,9 +353,7 @@ class CameraPreview : FrameLayout, CameraEvents {
     }
 
     override fun tapFocus(x: Int, y: Int) {
-        if (lifecycleState == LifecycleState.RESUMED && cameraState == CameraState.PREVIEW_STARTING) {
-            cameraApi.tapFocus(x, y)
-        }
+        cameraApi.tapFocus(x, y)
     }
 
     // Listener:
