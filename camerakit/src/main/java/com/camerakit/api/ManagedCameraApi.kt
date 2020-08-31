@@ -17,6 +17,10 @@ class ManagedCameraApi(private val delegate: CameraApi) : CameraApi by delegate 
         cameraHandler.run { delegate.release() }
     }
 
+    override fun destroy() {
+        cameraHandler.run { delegate.destroy() }
+    }
+
     override fun setPreviewSize(size: CameraSize) {
         cameraHandler.run { delegate.setPreviewSize(size) }
     }

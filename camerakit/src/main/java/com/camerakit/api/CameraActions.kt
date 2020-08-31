@@ -9,6 +9,7 @@ interface CameraActions {
 
     fun open(facing: CameraFacing)
     fun release()
+    fun destroy()
 
     fun setPreviewOrientation(degrees: Int)
     fun setPreviewSize(size: CameraSize)

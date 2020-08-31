@@ -52,6 +52,10 @@ class Camera1(eventsDelegate: CameraEvents) :
         onCameraClosed()
     }
 
+    override fun destroy() {
+        TODO("Not yet implemented")
+    }
+
     @Synchronized
     override fun setPreviewOrientation(degrees: Int) {
         val camera = camera

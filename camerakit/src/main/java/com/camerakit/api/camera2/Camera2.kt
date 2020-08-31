@@ -9,6 +9,7 @@ import android.hardware.camera2.*
 import android.hardware.camera2.params.MeteringRectangle
 import android.media.Image
 import android.media.ImageReader
+import android.os.Looper
 import android.util.Log
 import androidx.annotation.RequiresApi
 import android.view.Surface
@@ -18,6 +19,7 @@ import com.camerakit.type.CameraFacing
 import com.camerakit.type.CameraFlash
 import com.camerakit.type.CameraSize
 import java.nio.ByteBuffer
+import java.util.logging.Handler
 
 
 @RequiresApi(21)
@@ -90,6 +92,10 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
         imageReader = null
         previewStarted = false
         onCameraClosed()
+    }
+
+    override fun destroy() {
+        cameraHandler.quit()
     }
 
     @Synchronized

@@ -72,7 +72,7 @@ class CameraPreview : FrameLayout, CameraEvents {
 
     private val cameraSurfaceView: CameraSurfaceView = CameraSurfaceView(context)
 
-    private val cameraDispatcher: CoroutineDispatcher = newSingleThreadContext("CAMERA")
+    private val cameraDispatcher: ExecutorCoroutineDispatcher = newSingleThreadContext("CAMERA")
     private var cameraOpenContinuation: CancellableContinuation<Unit>? = null
     private var previewStartContinuation: CancellableContinuation<Unit>? = null
 
@@ -164,6 +164,8 @@ class CameraPreview : FrameLayout, CameraEvents {
         previewStartContinuation?.cancel()
         cameraDispatcher.cancelChildren()
         cameraDispatcher.cancel()
+        cameraDispatcher.close()
+        cameraApi.destroy()
     }
 
     //+lijiwei.youdao add

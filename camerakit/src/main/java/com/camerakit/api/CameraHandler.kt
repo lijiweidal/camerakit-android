@@ -2,8 +2,9 @@ package com.camerakit.api
 
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Log
 
-class CameraHandler private constructor(thread: HandlerThread) : Handler(thread.looper) {
+class CameraHandler private constructor(private val thread: HandlerThread) : Handler(thread.looper) {
 
     companion object {
         fun get(): CameraHandler {
@@ -13,8 +14,13 @@ class CameraHandler private constructor(thread: HandlerThread) : Handler(thread.
         }
     }
 
+    fun quit() {
+        thread.quit()
+    }
+
     init {
         thread.setUncaughtExceptionHandler { thread, exception ->
+            Log.d("CameraHandler", "thread name is " + thread.name + exception.toString())
         }
     }
 

@@ -495,7 +495,7 @@ public class CameraKitView extends GestureLayout {
         setImageMegaPixels(mImageMegaPixels);
 
         cameraFacing = getFacing() == CameraKit.FACING_BACK ? CameraFacing.BACK : CameraFacing.FRONT;
-        initCameraPreview();
+        //initCameraPreview();
         mCameraPreview.start(cameraFacing);
     }
 
