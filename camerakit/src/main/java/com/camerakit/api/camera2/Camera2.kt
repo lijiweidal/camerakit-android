@@ -43,6 +43,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
 
     private var flash: CameraFlash = CameraFlash.OFF
     private var previewStarted = false
+    private var openPreview = false  //预览关闭后不处理onCaptureCompleted回调
     private var cameraFacing: CameraFacing = CameraFacing.BACK
     private var waitingFrames: Int = 0
 
@@ -110,6 +111,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
 
     @Synchronized
     override fun startPreview(surfaceTexture: SurfaceTexture) {
+        openPreview = true
         val cameraDevice = cameraDevice
         val imageReader = imageReader
         if (cameraDevice != null && imageReader != null) {
@@ -135,6 +137,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
 
     @Synchronized
     override fun stopPreview() {
+        openPreview = false
         val captureSession = captureSession
         this.captureSession = null
         if (captureSession != null) {
@@ -398,7 +401,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
         }
 
         override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
-            if (!previewStarted) {
+            if (!previewStarted && openPreview) {
                 onPreviewStarted()
                 previewStarted = true
             }
