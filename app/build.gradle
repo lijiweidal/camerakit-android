@@ -12,6 +12,9 @@ android {
         versionName version
         versionCode 1
     }
+    packagingOptions {
+        exclude 'META-INF/proguard/coroutines.pro'
+    }
 }
 
 dependencies {

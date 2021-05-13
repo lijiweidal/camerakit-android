@@ -3,6 +3,7 @@ package com.camerakit.app;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
+import android.hardware.Camera;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import androidx.annotation.NonNull;
@@ -122,6 +123,9 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
                 Log.v("CameraKitView", "PreviewListener: onStop()");
             }
         });
+
+        printBackCameraInfo();
+        printFrontCameraInfo();
     }
 
     @Override
@@ -274,4 +278,25 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
         }
     }
 
+    private void printBackCameraInfo() {
+        Camera camera = Camera.open(0);
+        Camera.Parameters parameters = camera.getParameters();
+        for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
+            Log.d("lijiwei", "back camera supportedPreviewSizes : width=" + size.width + "*height=" + size.height);
+        }
+        for (Camera.Size size : parameters.getSupportedPictureSizes()) {
+            Log.d("lijiwei", "back camerasupportedPictureSizes : width=" + size.width + "*height=" + size.height);
+        }
+    }
+
+    private void printFrontCameraInfo() {
+        Camera camera = Camera.open(1);
+        Camera.Parameters parameters = camera.getParameters();
+        for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
+            Log.d("lijiwei", "front camera supportedPreviewSizes : width=" + size.width + "*height=" + size.height);
+        }
+        for (Camera.Size size : parameters.getSupportedPictureSizes()) {
+            Log.d("lijiwei", "front camera supportedPictureSizes : width=" + size.width + "*height=" + size.height);
+        }
+    }
 }

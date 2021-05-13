@@ -325,13 +325,8 @@ class CameraPreview : FrameLayout, CameraEvents {
                     else -> CameraSize(previewSize.height, previewSize.width)
                 }
 
-                /*photoSize = CameraSizeCalculator(attributes.photoSizes)
-                        .findClosestSizeMatchingArea((imageMegaPixels * 1000000).toInt())*/
-                //拍照的图片大小更改为6M
-                photoSize = when (previewOrientation % 180 == 0) {
-                    true -> CameraSize(3264, 1840)
-                    false -> CameraSize(1840, 3264)
-                }
+                photoSize = CameraSizeCalculator(attributes.photoSizes)
+                        .findClosestSizeMatchingArea((imageMegaPixels * 1000000).toInt())
                 Log.d("CameraPreview", "${photoSize.height} , ${photoSize.width}")
 
                 cameraApi.setPreviewOrientation(previewOrientation)
