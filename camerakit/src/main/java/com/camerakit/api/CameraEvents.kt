@@ -11,9 +11,9 @@ interface CameraEvents {
     fun onPreviewError()
 
     //+lijiwei add
-    fun startCamera2PreView(callBack: FrameCallBack)
+    fun startImageReader(callback: FrameCallback)
 
-    fun stopCamera2PreView()
+    fun stopImageReader()
 
     fun tapFocus(x: Int, y: Int)
 

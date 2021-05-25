@@ -18,7 +18,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 
-import com.camerakit.api.FrameCallBack;
 import com.camerakit.type.CameraFacing;
 import com.camerakit.type.CameraFlash;
 import com.camerakit.type.CameraSize;
@@ -534,12 +533,12 @@ public class CameraKitView extends GestureLayout {
     }
 
     //+lijiwei add for get frame data
-    public void startPreView(FrameCallBack callback) {
-        mCameraPreview.startCamera2PreView(callback);
+    public void startImageReader(com.camerakit.api.FrameCallback callback) {
+        mCameraPreview.startImageReader(callback);
     }
 
-    public void stopPreView() {
-        mCameraPreview.stopCamera2PreView();
+    public void stopImageReader() {
+        mCameraPreview.stopImageReader();
     }
     //-lijiwei add for get frame data
 

@@ -9,7 +9,6 @@ import android.hardware.camera2.*
 import android.hardware.camera2.params.MeteringRectangle
 import android.media.Image
 import android.media.ImageReader
-import android.os.Looper
 import android.util.Log
 import androidx.annotation.RequiresApi
 import android.view.Surface
@@ -18,8 +17,7 @@ import com.camerakit.api.camera2.ext.*
 import com.camerakit.type.CameraFacing
 import com.camerakit.type.CameraFlash
 import com.camerakit.type.CameraSize
-import java.nio.ByteBuffer
-import java.util.logging.Handler
+import com.camerakit.util.ImageUtil
 
 
 @RequiresApi(21)
@@ -162,7 +160,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
     @Synchronized
     override fun setPhotoSize(size: CameraSize) {
         Log.d("Camera2", "size=" + size.width + "*" + size.height)
-        this.imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.JPEG, 2)
+        this.imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.YUV_420_888, 2)
     }
 
     @Synchronized
@@ -178,46 +176,42 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
     }
 
     //+lijiwei.youdao add
-    override fun startCamera2PreView(callBack: FrameCallBack) {
+    override fun startImageReader(callback: FrameCallback) {
         val previewRequestBuilder = previewRequestBuilder
         val captureSession = captureSession
         captureSession!!.stopRepeating()
         if (previewRequestBuilder != null && captureSession != null) {
             try {
-                previewRequestBuilder?.addTarget(imageReader!!.surface)
+                previewRequestBuilder.addTarget(imageReader!!.surface)
                 captureSession.setRepeatingRequest(previewRequestBuilder.build(), null, cameraHandler)
                 this.previewRequestBuilder = previewRequestBuilder
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
-        imageReader?.setOnImageAvailableListener(object : ImageReader.OnImageAvailableListener {
-            override fun onImageAvailable(reader: ImageReader?) {
-                if (reader != null) {
-                    try {
-                        val image: Image = reader.acquireLatestImage()
-                        val buffer: ByteBuffer = image.planes[0].buffer
-                        val bytes = ByteArray(buffer.remaining())
-                        buffer.get(bytes)
-                        callBack.onFrame(bytes)
+        imageReader?.setOnImageAvailableListener({ reader ->
+            if (reader != null) {
+                try {
+                    val image: Image? = reader.acquireLatestImage()
+                    if (image != null) {
+                        callback.onFrame(ImageUtil.imageToByteArray(image))
                         image.close()
-                    } catch (e: java.lang.Exception) {
-                        e.printStackTrace()
                     }
+                } catch (e: java.lang.Exception) {
+                    e.printStackTrace()
                 }
-
             }
         }, null)
     }
 
-    override fun stopCamera2PreView() {
+    override fun stopImageReader() {
         imageReader?.setOnImageAvailableListener(null, null)
         val previewRequestBuilder = previewRequestBuilder
         val captureSession = captureSession
         captureSession!!.stopRepeating()
         if (previewRequestBuilder != null && captureSession != null) {
             try {
-                previewRequestBuilder?.removeTarget(imageReader!!.surface)
+                previewRequestBuilder.removeTarget(imageReader!!.surface)
                 captureSession.setRepeatingRequest(previewRequestBuilder.build(), captureCallback, cameraHandler)
                 this.previewRequestBuilder = previewRequestBuilder
             } catch (e: Exception) {

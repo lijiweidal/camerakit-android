@@ -169,12 +169,12 @@ class CameraPreview : FrameLayout, CameraEvents {
     }
 
     //+lijiwei.youdao add
-    override fun startCamera2PreView(callBack: FrameCallBack) {
-        cameraApi.startCamera2PreView(callBack)
+    override fun startImageReader(callback: FrameCallback) {
+        cameraApi.startImageReader(callback)
     }
 
-    override fun stopCamera2PreView() {
-        cameraApi.stopCamera2PreView()
+    override fun stopImageReader() {
+        cameraApi.stopImageReader()
     }
     //-lijiwei.youdao add
 
