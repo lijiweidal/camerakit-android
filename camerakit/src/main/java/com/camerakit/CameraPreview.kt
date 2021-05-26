@@ -313,11 +313,16 @@ class CameraPreview : FrameLayout, CameraEvents {
                     surfaceTexture.setRotation(displayOrientation)
                 }
 
-                previewSize = CameraSizeCalculator(attributes.previewSizes)
+                //Panda屏幕比例为16:10，Camera支持的尺寸只有1920*1200为16:10
+                /*previewSize = CameraSizeCalculator(attributes.previewSizes)
                         .findClosestSizeContainingTarget(when (previewOrientation % 180 == 0) {
                             true -> CameraSize(width, height)
                             false -> CameraSize(height, width)
-                        })
+                        })*/
+                previewSize = when (previewOrientation % 180 == 0) {
+                    true -> CameraSize(1920, 1200)
+                    false -> CameraSize(1200, 1920)
+                }
 
                 surfaceTexture.setDefaultBufferSize(previewSize.width, previewSize.height)
                 surfaceTexture.size = when (previewOrientation % 180) {
@@ -325,9 +330,7 @@ class CameraPreview : FrameLayout, CameraEvents {
                     else -> CameraSize(previewSize.height, previewSize.width)
                 }
 
-                photoSize = CameraSizeCalculator(attributes.photoSizes)
-                        .findClosestSizeMatchingArea((imageMegaPixels * 1000000).toInt())
-                Log.d("CameraPreview", "${photoSize.height} , ${photoSize.width}")
+                photoSize = previewSize
 
                 cameraApi.setPreviewOrientation(previewOrientation)
                 cameraApi.setPreviewSize(previewSize)
