@@ -3,6 +3,7 @@ package com.camerakit.api.camera2
 import android.content.Context
 import android.content.Context.CAMERA_SERVICE
 import android.graphics.ImageFormat
+import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
@@ -160,7 +161,8 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
     @Synchronized
     override fun setPhotoSize(size: CameraSize) {
         Log.d("Camera2", "size=" + size.width + "*" + size.height)
-        this.imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.YUV_420_888, 2)
+        //此处写死YUV格式尺寸大小为1280*720，使用1920及以上尺寸或者JPEG格式会出现卡顿问题
+        this.imageReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 2)
     }
 
     @Synchronized
