@@ -160,9 +160,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
 
     @Synchronized
     override fun setPhotoSize(size: CameraSize) {
-        Log.d("Camera2", "size=" + size.width + "*" + size.height)
-        //此处写死YUV格式尺寸大小为1280*720，使用1920及以上尺寸或者JPEG格式会出现卡顿问题
-        this.imageReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 3)
+        this.imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.JPEG, 2)
     }
 
     @Synchronized
@@ -179,6 +177,10 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
 
     //+lijiwei.youdao add
     override fun startImageReader(callback: FrameCallback) {
+
+        //此处写死YUV格式尺寸大小为1280*720，使用1920及以上尺寸或者JPEG格式会出现卡顿问题。只有开启ImageReader才会重新配置
+        this.imageReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 3)
+
         val previewRequestBuilder = previewRequestBuilder
         val captureSession = captureSession
         captureSession!!.stopRepeating()
@@ -358,10 +360,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
                 STATE_PREVIEW -> {
                     val image = imageReader?.acquireLatestImage()
                     if (image != null) {
-                        val buffer = image.planes[0].buffer
-                        val bytes = ByteArray(buffer.remaining())
-                        buffer.get(bytes)
-                        photoCallback?.invoke(bytes)
+                        photoCallback?.invoke(ImageUtil.imageToByteArray(image))
                         photoCallback = null
                         image.close()
                     }
