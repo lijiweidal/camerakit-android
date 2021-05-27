@@ -162,7 +162,7 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
     override fun setPhotoSize(size: CameraSize) {
         Log.d("Camera2", "size=" + size.width + "*" + size.height)
         //此处写死YUV格式尺寸大小为1280*720，使用1920及以上尺寸或者JPEG格式会出现卡顿问题
-        this.imageReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 2)
+        this.imageReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 3)
     }
 
     @Synchronized
@@ -210,10 +210,12 @@ class Camera2(eventsDelegate: CameraEvents, context: Context) :
         imageReader?.setOnImageAvailableListener(null, null)
         val previewRequestBuilder = previewRequestBuilder
         val captureSession = captureSession
-        captureSession!!.stopRepeating()
+        captureSession?.stopRepeating()
         if (previewRequestBuilder != null && captureSession != null) {
             try {
-                previewRequestBuilder.removeTarget(imageReader!!.surface)
+                if (imageReader != null) {
+                    previewRequestBuilder.removeTarget(imageReader!!.surface)
+                }
                 captureSession.setRepeatingRequest(previewRequestBuilder.build(), captureCallback, cameraHandler)
                 this.previewRequestBuilder = previewRequestBuilder
             } catch (e: Exception) {
