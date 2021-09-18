@@ -94,11 +94,8 @@ class CameraPreview : FrameLayout, CameraEvents {
 
     init {
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        displayOrientation = if (windowManager.defaultDisplay.rotation == 0) {
-            windowManager.defaultDisplay.rotation * 90 + 90
-        } else {
-            windowManager.defaultDisplay.rotation * 90
-        }
+        displayOrientation = windowManager.defaultDisplay.rotation * 90
+
         cameraSurfaceView.cameraSurfaceTextureListener = object : CameraSurfaceTextureListener {
             override fun onSurfaceReady(cameraSurfaceTexture: CameraSurfaceTexture) {
                 surfaceTexture = cameraSurfaceTexture
@@ -320,8 +317,8 @@ class CameraPreview : FrameLayout, CameraEvents {
                             false -> CameraSize(height, width)
                         })*/
                 previewSize = when (previewOrientation % 180 == 0) {
-                    true -> CameraSize(1920, 1200)
-                    false -> CameraSize(1200, 1920)
+                    true -> CameraSize(1920, 1080)
+                    false -> CameraSize(1080, 1920)
                 }
 
                 surfaceTexture.setDefaultBufferSize(previewSize.width, previewSize.height)
@@ -330,7 +327,7 @@ class CameraPreview : FrameLayout, CameraEvents {
                     else -> CameraSize(previewSize.height, previewSize.width)
                 }
 
-                photoSize = previewSize
+                photoSize = CameraSize(1920, 1080)
 
                 cameraApi.setPreviewOrientation(previewOrientation)
                 cameraApi.setPreviewSize(previewSize)

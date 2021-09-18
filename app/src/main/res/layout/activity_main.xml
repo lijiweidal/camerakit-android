@@ -31,7 +31,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:adjustViewBounds="true"
-                app:camera_facing="back"
+                app:camera_facing="front"
                 app:camera_focus="continuous"
                 app:camera_imageJpegQuality="100"
                 app:camera_imageMegaPixels="2.0"

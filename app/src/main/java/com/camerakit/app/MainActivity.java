@@ -3,15 +3,26 @@ package com.camerakit.app;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.ImageFormat;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
+
 import androidx.annotation.NonNull;
+
+import com.camerakit.api.FrameCallback;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.appcompat.widget.Toolbar;
+
 import android.text.Html;
 import android.util.Log;
 import android.view.MenuItem;
@@ -21,6 +32,13 @@ import android.widget.Button;
 import com.camerakit.CameraKit;
 import com.camerakit.CameraKitView;
 import com.camerakit.type.CameraSize;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
 import jpegkit.Jpeg;
 import jpegkit.JpegImageView;
 
@@ -87,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
 
         imageView = findViewById(R.id.imageView);
 
-        cameraView.setPermissionsListener(new CameraKitView.PermissionsListener() {
+        /*cameraView.setPermissionsListener(new CameraKitView.PermissionsListener() {
             @Override
             public void onPermissionsSuccess() {
                 permissionsButton.setVisibility(View.GONE);
@@ -109,13 +127,14 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
             public void onClosed() {
                 Log.v("CameraKitView", "CameraListener: onClosed()");
             }
-        });
+        });*/
 
         cameraView.setPreviewListener(new CameraKitView.PreviewListener() {
             @Override
             public void onStart() {
                 Log.v("CameraKitView", "PreviewListener: onStart()");
                 updateInfoText();
+
             }
 
             @Override
@@ -124,8 +143,37 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
             }
         });
 
-        printBackCameraInfo();
-        printFrontCameraInfo();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                cameraView.startImageReader(new FrameCallback() {
+                    @Override
+                    public void onFrame(byte[] data) {
+                        Log.d("lijiwei", "onFrame: " + data.length);
+                        /*try {
+                            YuvImage image = new YuvImage(data, ImageFormat.NV21, 1920, 1080, null);
+                            ByteArrayOutputStream outputSteam = new ByteArrayOutputStream();
+                            image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 70, outputSteam); // 将NV21格式图片，以质量70压缩成Jpeg，并得到JPEG数据流
+                            byte[] jpegData = outputSteam.toByteArray();                                                //从outputSteam得到byte数据
+
+                            File file = new File("/sdcard/finger/pic/camera1_" + System.currentTimeMillis() + ".jpg");
+                            if (!file.exists() && !file.getParentFile().exists()) {
+                                file.getParentFile().mkdirs();
+                            }
+                            OutputStream os = new FileOutputStream(file);
+                            os.write(jpegData);
+                            os.flush();
+                            os.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }*/
+                    }
+                });
+            }
+        }, 1000);
+
+        /*printBackCameraInfo();
+        printFrontCameraInfo();*/
     }
 
     @Override
@@ -189,9 +237,18 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
                 @Override
                 public void onImage(CameraKitView view, final byte[] photo) {
                     new Thread(new Runnable() {
+                        @RequiresApi(api = Build.VERSION_CODES.N)
                         @Override
                         public void run() {
                             final Jpeg jpeg = new Jpeg(photo);
+                            try {
+                                OutputStream os = new FileOutputStream(getDataDir().getPath() + "/" + System.currentTimeMillis() + ".jpg");
+                                os.write(jpeg.getJpegBytes());
+                                os.flush();
+                                os.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                             imageView.post(new Runnable() {
                                 @Override
                                 public void run() {
@@ -278,7 +335,7 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
         }
     }
 
-    private void printBackCameraInfo() {
+    /*private void printBackCameraInfo() {
         Camera camera = Camera.open(0);
         Camera.Parameters parameters = camera.getParameters();
         for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
@@ -298,5 +355,5 @@ public class MainActivity extends AppCompatActivity implements Toolbar.OnMenuIte
         for (Camera.Size size : parameters.getSupportedPictureSizes()) {
             Log.d("lijiwei", "front camera supportedPictureSizes : width=" + size.width + "*height=" + size.height);
         }
-    }
+    }*/
 }
